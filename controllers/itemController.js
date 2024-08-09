@@ -62,15 +62,6 @@ exports.item_create_get = asyncHandler(async (req, res, next) => {
 
 // Handle item create on POST.
 exports.item_create_post = [
-	// // Convert the category to an array.
-	// (req, res, next) => {
-	// 	if (!Array.isArray(req.body.category)) {
-	// 		req.body.category =
-	// 			typeof req.body.category === "undefined" ? [] : [req.body.category];
-	// 	}
-	// 	next();
-	// },
-
 	// Validate and sanitize fields.
 	body("name", "Name must not be empty.").trim().isLength({ min: 1 }).escape(),
 	body("category.*").escape(),
