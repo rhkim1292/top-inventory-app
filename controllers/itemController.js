@@ -46,6 +46,7 @@ exports.item_detail = asyncHandler(async (req, res, next) => {
 		itemQuantity: item.quantity,
 		itemCategory: item.category.name,
 		itemPrice: formatCurrency(item.priceInCents / 100),
+		itemUrl: item.url,
 	});
 });
 
@@ -112,12 +113,24 @@ exports.item_create_post = [
 
 // Display Item delete form on GET.
 exports.item_delete_get = asyncHandler(async (req, res, next) => {
-	res.send("NOT IMPLEMENTED: Item delete GET");
+	// Get details of item
+	const item = await Item.findById(req.params.id).exec();
+
+	if (item === null) {
+		// No results.
+		res.redirect("/items");
+	}
+
+	res.render("item_delete", {
+		title: "Delete Item",
+		item: item,
+	});
 });
 
 // Handle Item delete on POST.
 exports.item_delete_post = asyncHandler(async (req, res, next) => {
-	res.send("NOT IMPLEMENTED: Item delete POST");
+	await Item.findByIdAndDelete(req.body.itemid);
+	res.redirect("/items");
 });
 
 // Display Item update form on GET.
