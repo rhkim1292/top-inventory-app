@@ -130,12 +130,70 @@ exports.category_delete_post = asyncHandler(async (req, res, next) => {
 	}
 });
 
-// Display Category update form on GET.
+// Display category update form on GET.
 exports.category_update_get = asyncHandler(async (req, res, next) => {
-	res.send("NOT IMPLEMENTED: Category update GET");
+	// Get category for form.
+	const category = await Category.findById(req.params.id).exec();
+
+	if (category === null) {
+		// No results.
+		const err = new Error("Category not found");
+		err.status = 404;
+		return next(err);
+	}
+
+	res.render("category_form", {
+		title: "Update Category",
+		category: category,
+	});
 });
 
 // Handle Category update on POST.
-exports.category_update_post = asyncHandler(async (req, res, next) => {
-	res.send("NOT IMPLEMENTED: Category update POST");
-});
+exports.category_update_post = [
+	// Validate and sanitize the name field.
+	body("name", "Category name must contain at least 3 characters")
+		.trim()
+		.isLength({ min: 3 })
+		.escape(),
+
+	// Process request after validation and sanitization.
+	asyncHandler(async (req, res, next) => {
+		// Extract the validation errors from a request.
+		const errors = validationResult(req);
+
+		// Create a category object with escaped and trimmed data.
+		const category = new Category({ name: req.body.name, _id: req.params.id });
+
+		if (!errors.isEmpty()) {
+			// There are errors. Render the form again with sanitized values/error messages.
+			res.render("category_form", {
+				title: "Update Category",
+				category: category,
+				errors: errors.array(),
+			});
+			return;
+		} else {
+			// Data from form is valid. Update the record.
+			// Check if Category with same name already exists.
+			const categoryExists = await Category.findOne({ name: req.body.name })
+				.collation({ locale: "en", strength: 2 })
+				.exec();
+			if (categoryExists) {
+				// Category exists, redirect to its detail page.
+				res.render("category_form", {
+					title: "Update Category",
+					category: category,
+					errors: [{ msg: "Category already exists." }],
+				});
+				return;
+			} else {
+				const updatedCategory = await Category.findByIdAndUpdate(
+					req.params.id,
+					category
+				);
+				// Redirect to category detail page.
+				res.redirect(updatedCategory.url);
+			}
+		}
+	}),
+];
